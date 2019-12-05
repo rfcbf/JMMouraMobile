@@ -200,7 +200,11 @@ class _ManterCadastroState extends State<ManterCadastro> {
                             inputType: InputType.date,
                             initialDate: DateTime.now(),
                             // lastDate: DateTime(DateTime.now().day + 1),
-                            initialValue: widget.novo ? null : Funcoes().retornaStringData(widget.cadastro.dataNasc),
+                            initialValue: widget.novo
+                                ? null
+                                : widget.cadastro.dataNasc != null
+                                    ? Funcoes().retornaStringData(widget.cadastro.dataNasc)
+                                    : null,
                             format: DateFormat("dd/MM/yyyy"),
                             decoration: InputDecoration(
                               hintText: "##/##/####",
