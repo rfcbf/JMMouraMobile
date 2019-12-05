@@ -1,16 +1,26 @@
-# cadastromoura
+# Modulo Mobile ( Flutter )
 
-A new Flutter project.
+Olá a todos. Esse foi o desafio passado a mim pela empresa JM Moura. 
+O modulo mobile foi desenvolvindo utilizado o programa vscode com a framework Flutter
 
-## Getting Started
+## Como foi feito?
 
-This project is a starting point for a Flutter application.
+O app foi desenvolvido em Flutter. O Flutter, um framework desenvolvido pelo Google na linguagem Dart, permite o desenvolvimento de aplicações nativas tanto para Android quanto para iOS a partir da composição de Widgets. Podemos utilizar blocos prontos desenvolvidos pela equipe do Google, como botões, cards, menus e muitos outros, para agilizar o desenvolvimento, mas também podemos personalizar e/ou criar Widgets livremente.
 
-A few resources to get you started if this is your first Flutter project:
+A api desenvolvido está hospedada no Heroku, usando o banco de dados MySql hospedado no mesmo site.
+A primeira vez que executr o app pode ser que demore um pouco, pois minha licença no Heroku é free, com isso o projeto fica em standy by até ser executado.
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+Mais informações: 
+<a href="http://flutter.dev" title="clique aqui" rel="nofollow">clique aqui</a> Instalação e configuração
+<a href="https://flutter.dev/docs/get-started/install" title="clique aqui" rel="nofollow">clique aqui</a> Configuração do editor
+<a href="https://flutter.dev/docs/get-started/editor?tab=vscode" title="clique aqui" rel="nofollow">clique aqui</a> Vale informar que utilizei o VSCode
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Instruções para executar:
+
+1) Instalar e configurar o flutter;
+2) Baixar do gitHub o codigo do modulo
+3) Abri-lo no vscode;
+4) Abrir o terminal do vscode;
+5) Digitar flutter channel master;
+6) Depois flutter upgrade;
+7) Executar o app em um celular;
