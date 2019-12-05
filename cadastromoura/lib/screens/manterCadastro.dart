@@ -2,13 +2,18 @@ import 'package:cadastromoura/components/alert_widget.dart';
 import 'package:cadastromoura/components/containerSemInternet_widget.dart';
 import 'package:cadastromoura/components/raisedGradientButton_widget.dart';
 import 'package:cadastromoura/data/Cores.dart';
-import 'package:cadastromoura/data/UF.dart';
+// import 'package:cadastromoura/data/UF.dart';
 import 'package:cadastromoura/model/cadastro.dart';
+import 'package:cadastromoura/services/cadastroService.dart';
+import 'package:cadastromoura/services/cepService.dart';
 import 'package:cadastromoura/services/connectionStatus.dart';
+import 'package:cadastromoura/services/funcoes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:modal_progress_hud/modal_progress_hud.dart';
 
 class ManterCadastro extends StatefulWidget {
   final Cadastro cadastro;
@@ -25,6 +30,16 @@ class _ManterCadastroState extends State<ManterCadastro> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   StatusConexao _conexao = StatusConexao.getInstance();
   bool _validacao = false;
+  bool _operacao = false;
+
+  TextEditingController _cidadeController = TextEditingController();
+  TextEditingController _enderecoController = TextEditingController();
+  TextEditingController _bairroController = TextEditingController();
+  TextEditingController _estadoController = TextEditingController();
+
+  var maskTelefone = MaskTextInputFormatter(mask: '(##) #####-####', filter: {"#": RegExp(r'[0-9]')});
+  var maskData = MaskTextInputFormatter(mask: '##/##/####', filter: {"#": RegExp(r'[0-9]')});
+  var masCep = MaskTextInputFormatter(mask: '#####-###', filter: {"#": RegExp(r'[0-9]')});
 
   @override
   void initState() {
@@ -32,78 +47,110 @@ class _ManterCadastroState extends State<ManterCadastro> {
     initializeDateFormatting(Intl.defaultLocale);
 
     super.initState();
+
+    if (!widget.novo) {
+      _cidadeController.text = widget.cadastro.cidade;
+      _enderecoController.text = widget.cadastro.endereco;
+      _bairroController.text = widget.cadastro.bairro;
+      _estadoController.text = widget.cadastro.estado;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return _conexao.hasConnection
-        ? Container(
-            color: Cores.fundoTela,
-            child: SafeArea(
-              bottom: false,
-              top: false,
-              child: Scaffold(
-                  key: _scaffoldKey,
-                  appBar: AppBar(
-                    title: Text('Cadastro'),
-                    backgroundColor: Cores.azul,
-                    elevation: 2,
-                    actions: <Widget>[
-                      IconButton(
-                        padding: EdgeInsets.only(right: 20),
-                        color: Cores.branco,
-                        icon: Icon(Icons.save),
-                        focusColor: Colors.transparent,
-                        splashColor: Colors.transparent,
-                        highlightColor: Colors.transparent,
-                        hoverColor: Colors.transparent,
-                        onPressed: () async {
-                          if (_fbKey.currentState.saveAndValidate()) {
-                            setState(() {
-                              _validacao = true;
+    return Container(
+        color: Cores.fundoTela,
+        child: SafeArea(
+          bottom: false,
+          top: false,
+          child: GestureDetector(
+            onTap: () {
+              // call this method here to hide soft keyboard
+              FocusScope.of(context).requestFocus(new FocusNode());
+            },
+            child: Scaffold(
+                key: _scaffoldKey,
+                appBar: AppBar(
+                  title: Text('Cadastro de Cliente'),
+                  backgroundColor: Cores.azul,
+                  elevation: 2,
+                  actions: <Widget>[
+                    IconButton(
+                      padding: EdgeInsets.only(right: 20),
+                      color: Cores.branco,
+                      icon: Icon(Icons.save),
+                      focusColor: Colors.transparent,
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      hoverColor: Colors.transparent,
+                      onPressed: () async {
+                        setState(() {
+                          _validacao = true;
+                        });
+
+                        if (_fbKey.currentState.saveAndValidate()) {
+                          _executandoOperacao(true);
+
+                          String formattedDate = _fbKey.currentState.value['data'] != null
+                              ? DateFormat('dd/MM/yyyy').format(_fbKey.currentState.value['data'])
+                              : "";
+
+                          if (widget.novo) {
+                            Cadastro cadastro = Cadastro(
+                                nome: _fbKey.currentState.value['nome'],
+                                bairro: _fbKey.currentState.value['bairro'],
+                                celular: _fbKey.currentState.value['telefone'],
+                                cep: _fbKey.currentState.value['cep'],
+                                cidade: _fbKey.currentState.value['cidade'],
+                                dataNasc: formattedDate,
+                                endereco: _fbKey.currentState.value['endereco'],
+                                estado: _fbKey.currentState.value['estados']);
+
+                            await CadastroService.post(cadastro).then((valor) {
+                              print('gravado com sucesso');
+                            }).catchError((onError) {
+                              print('erro ao gravar');
                             });
-
-                            print(_fbKey.currentState.value);
-
-                            // DocumentSnapshot docHorario =
-                            //     await Horarios.recuperaHorario(documentID: _fbKey.currentState.value['horario']);
-                            // String formatacao = docHorario.data['horaInicial'] + ' às ' + docHorario.data['horaFinal'];
-
-                            // Agenda.incluirAgandamento(
-                            //     data: _fbKey.currentState.value['dataAgendamento'],
-                            //     horario: _fbKey.currentState.value['horario'],
-                            //     obs: _fbKey.currentState.value['obsmarcacao'],
-                            //     usuario: widget.user.firebaseUser.uid,
-                            //     nomeCliente: widget.user.userData['nome'],
-                            //     horaInicial: docHorario.data['horaInicial'],
-                            //     horaFinal: docHorario.data['horaFinal'],
-                            //     descHorario: formatacao,
-                            //     onSucess: sucesso,
-                            //     onFail: erro);
-
-                            // Map<String, dynamic> dados = {
-                            //   "qtdAgenda": widget.user.userData['qtdAgenda'] + 1,
-                            // };
-
-                            // widget.user.atualizarQuantitativo(
-                            //   userData: dados,
-                            //   documentID: widget.user.firebaseUser.uid,
-                            // );
-
-                            Navigator.pop(context);
                           } else {
-                            print(_fbKey.currentState.value);
-                            erro();
+                            Cadastro cadastro = Cadastro(
+                                id: widget.cadastro.id,
+                                nome: _fbKey.currentState.value['nome'],
+                                bairro: _fbKey.currentState.value['bairro'],
+                                celular: _fbKey.currentState.value['telefone'],
+                                cep: _fbKey.currentState.value['cep'],
+                                cidade: _fbKey.currentState.value['cidade'],
+                                dataNasc: formattedDate,
+                                endereco: _fbKey.currentState.value['endereco'],
+                                estado: _fbKey.currentState.value['estados']);
+
+                            await CadastroService.update(cadastro).then((valor) {
+                              print('gravado com sucesso');
+                            }).catchError((onError) {
+                              print('erro ao gravar');
+                            });
                           }
-                          // print(_fbKey.currentState.value['contact_person'].runtimeType);
-                        },
-                      ),
-                    ],
-                  ),
-                  body: _tela(context)),
-            ),
-          )
-        : SemInternet();
+                          _executandoOperacao(false);
+
+                          Navigator.pop(context);
+                        } else {
+                          print(_fbKey.currentState.value);
+                          erro();
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                body: _conexao.hasConnection
+                    ? ModalProgressHUD(child: _tela(context), inAsyncCall: _operacao)
+                    : SemInternet()),
+          ),
+        ));
+  }
+
+  void _executandoOperacao(bool enable) {
+    setState(() {
+      _operacao = enable;
+    });
   }
 
   Widget _tela(BuildContext context) {
@@ -124,7 +171,6 @@ class _ManterCadastroState extends State<ManterCadastro> {
                       style: TextStyle(color: Cores.preto),
                       attribute: "nome",
                       initialValue: widget.novo ? '' : widget.cadastro.nome,
-                      showCursor: false,
                       readOnly: false,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
@@ -146,11 +192,150 @@ class _ManterCadastroState extends State<ManterCadastro> {
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10.0),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: FormBuilderDateTimePicker(
+                            attribute: "data",
+                            inputType: InputType.date,
+                            initialDate: DateTime.now(),
+                            // lastDate: DateTime(DateTime.now().day + 1),
+                            initialValue: widget.novo ? null : Funcoes().retornaStringData(widget.cadastro.dataNasc),
+                            format: DateFormat("dd/MM/yyyy"),
+                            decoration: InputDecoration(
+                              hintText: "##/##/####",
+                              hintStyle: TextStyle(color: Colors.grey),
+                              counterStyle: TextStyle(color: Cores.fundoTela),
+                              labelText: "Data de Nascimento",
+                              labelStyle: TextStyle(color: Cores.azul),
+                              errorStyle: TextStyle(color: Cores.vermelho),
+                              errorBorder:
+                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                              focusedErrorBorder:
+                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                            child: FormBuilderTextField(
+                          style: TextStyle(color: Cores.preto),
+                          attribute: "telefone",
+                          initialValue: widget.novo ? '' : widget.cadastro.celular,
+                          textCapitalization: TextCapitalization.characters,
+                          keyboardType: TextInputType.number,
+                          readOnly: false,
+                          inputFormatters: [maskTelefone],
+                          textAlign: TextAlign.end,
+                          decoration: InputDecoration(
+                            hintText: "(##) #####-####",
+                            hintStyle: TextStyle(color: Colors.grey),
+                            counterStyle: TextStyle(color: Cores.fundoTela),
+                            labelText: "Telefone",
+                            labelStyle: TextStyle(color: Cores.azul),
+                            errorStyle: TextStyle(color: Cores.vermelho),
+                            errorBorder:
+                                UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                            focusedErrorBorder:
+                                UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                          ),
+                        )),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Expanded(
+                          child: FormBuilderTextField(
+                            style: TextStyle(color: Cores.preto),
+                            attribute: "cep",
+                            initialValue: widget.novo ? '' : widget.cadastro.cep,
+                            keyboardType: TextInputType.number,
+                            readOnly: false,
+                            inputFormatters: [masCep],
+                            textAlign: TextAlign.end,
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: InputDecoration(
+                              counterStyle: TextStyle(color: Cores.fundoTela),
+                              hintText: "#####-###",
+                              labelText: "CEP",
+                              hintStyle: TextStyle(color: Colors.grey),
+                              labelStyle: TextStyle(color: Cores.azul),
+                              errorStyle: TextStyle(color: Cores.vermelho),
+                              errorBorder:
+                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                              focusedErrorBorder:
+                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                            ),
+                            validators: [
+                              FormBuilderValidators.required(
+                                errorText: "Favor preencher o campo estado",
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          width: 70,
+                        ),
+                        Expanded(
+                          child: Center(
+                            child: RaisedGradientButton(
+                                texto: Text('      Consultar CEP',
+                                    style: TextStyle(color: Cores.branco, fontSize: 15, fontWeight: FontWeight.bold)),
+                                gradient:
+                                    LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [
+                                  Cores.azul,
+                                  Cores.azul,
+                                ]),
+                                elevation: 3,
+                                radius: 10,
+                                height: 40,
+                                icone: Icon(
+                                  Icons.home,
+                                  color: Cores.branco,
+                                  size: 20,
+                                ),
+                                onPressed: () async {
+                                  _executandoOperacao(true);
+                                  final cep = masCep.getUnmaskedText();
+
+                                  await CepService.fetchCep(cep: cep).then((resultadoCep) {
+                                    print(resultadoCep.localidade);
+
+                                    if (resultadoCep.cep == null) {
+                                      cepNaoEncontrado();
+                                    } else {
+                                      setState(() {
+                                        _cidadeController.text = resultadoCep.localidade;
+                                        _estadoController.text = resultadoCep.uf;
+                                        _bairroController.text = resultadoCep.bairro;
+                                        _enderecoController.text =
+                                            resultadoCep.logradouro + ' ' + resultadoCep.complemento;
+                                        // _fbKey.currentState.value['cidade'] = _cidade;
+                                      });
+                                    }
+                                  }).catchError((onError) {
+                                    print('erro ao pesquisar o cep');
+                                    erroCEP();
+                                  });
+
+                                  _executandoOperacao(false);
+                                }),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(10.0),
                     child: FormBuilderTextField(
                       style: TextStyle(color: Cores.preto),
                       attribute: "endereco",
                       initialValue: widget.novo ? '' : widget.cadastro.endereco,
-                      showCursor: false,
+                      controller: _enderecoController,
                       readOnly: false,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
@@ -172,172 +357,86 @@ class _ManterCadastroState extends State<ManterCadastro> {
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: FormBuilderTextField(
-                            style: TextStyle(color: Cores.preto),
-                            attribute: "bairro",
-                            initialValue: widget.novo ? '' : widget.cadastro.bairro,
-                            showCursor: false,
-                            textCapitalization: TextCapitalization.characters,
-                            readOnly: false,
-                            keyboardType: TextInputType.text,
-                            decoration: InputDecoration(
-                              counterStyle: TextStyle(color: Cores.fundoTela),
-                              labelText: "Bairro",
-                              labelStyle: TextStyle(color: Cores.azul),
-                              errorStyle: TextStyle(color: Cores.vermelho),
-                              errorBorder:
-                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                              focusedErrorBorder:
-                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                            ),
-                            validators: [
-                              FormBuilderValidators.required(
-                                errorText: "Favor preencher o campo Bairro",
-                              ),
-                              FormBuilderValidators.minLength(3, errorText: 'No mínimo 3 letras')
-                            ],
-                          ),
+                    child: FormBuilderTextField(
+                      style: TextStyle(color: Cores.preto),
+                      attribute: "bairro",
+                      controller: _bairroController,
+                      initialValue: widget.novo ? '' : widget.cadastro.bairro,
+                      textCapitalization: TextCapitalization.sentences,
+                      readOnly: false,
+                      keyboardType: TextInputType.text,
+                      decoration: InputDecoration(
+                        counterStyle: TextStyle(color: Cores.fundoTela),
+                        labelText: "Bairro",
+                        labelStyle: TextStyle(color: Cores.azul),
+                        errorStyle: TextStyle(color: Cores.vermelho),
+                        errorBorder:
+                            UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                        focusedErrorBorder:
+                            UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                      ),
+                      validators: [
+                        FormBuilderValidators.required(
+                          errorText: "Favor preencher o campo Bairro",
                         ),
-                        Expanded(
-                          child: FormBuilderTextField(
-                            style: TextStyle(color: Cores.preto),
-                            attribute: "cidade",
-                            initialValue: widget.novo ? '' : widget.cadastro.cidade,
-                            keyboardType: TextInputType.text,
-                            readOnly: false,
-                            showCursor: false,
-                            textCapitalization: TextCapitalization.sentences,
-                            decoration: InputDecoration(
-                              counterStyle: TextStyle(color: Cores.fundoTela),
-                              labelText: "Cidade",
-                              labelStyle: TextStyle(color: Cores.azul),
-                              errorStyle: TextStyle(color: Cores.vermelho),
-                              errorBorder:
-                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                              focusedErrorBorder:
-                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                            ),
-                            validators: [
-                              FormBuilderValidators.required(
-                                errorText: "Favor preencher o campo Cidade",
-                              ),
-                              FormBuilderValidators.minLength(3, errorText: 'No mínimo 3 letras')
-                            ],
-                          ),
-                        ),
+                        FormBuilderValidators.minLength(3, errorText: 'No mínimo 3 letras')
                       ],
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: <Widget>[
-                        Expanded(
-                          child: FormBuilderDropdown(
-                            attribute: "estados",
-                            initialValue: widget.novo ? '' : widget.cadastro.estado,
-
-                            decoration: InputDecoration(
-                              labelText: "Estados",
-                              labelStyle: TextStyle(color: Cores.azul),
-                              errorStyle: TextStyle(color: Cores.vermelho),
-                              errorBorder:
-                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                              focusedErrorBorder:
-                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                            ),
-                            // initialValue: '',
-                            // hint: Text('Seleci'),
-                            validators: [
-                              FormBuilderValidators.required(
-                                errorText: "Favor selecionar o horário",
-                              )
-                            ],
-                            items: estados
-                                .map((f) => DropdownMenuItem(
-                                      value: f,
-                                      child: Text('$f'),
-                                    ))
-                                .toList(),
-                          ),
+                    child: FormBuilderTextField(
+                      style: TextStyle(color: Cores.preto),
+                      controller: _cidadeController,
+                      attribute: "cidade",
+                      initialValue: widget.novo ? '' : widget.cadastro.cidade,
+                      keyboardType: TextInputType.text,
+                      readOnly: false,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        counterStyle: TextStyle(color: Cores.fundoTela),
+                        labelText: "Cidade",
+                        labelStyle: TextStyle(color: Cores.azul),
+                        errorStyle: TextStyle(color: Cores.vermelho),
+                        errorBorder:
+                            UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                        focusedErrorBorder:
+                            UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                      ),
+                      validators: [
+                        FormBuilderValidators.required(
+                          errorText: "Favor preencher o campo Cidade",
                         ),
-                        Expanded(
-                          child: FormBuilderTextField(
-                            style: TextStyle(color: Cores.preto),
-                            attribute: "cep",
-                            initialValue: widget.novo ? '' : widget.cadastro.cep,
-                            keyboardType: TextInputType.text,
-                            readOnly: false,
-                            showCursor: false,
-                            textCapitalization: TextCapitalization.sentences,
-                            decoration: InputDecoration(
-                              counterStyle: TextStyle(color: Cores.fundoTela),
-                              labelText: "CEP",
-                              labelStyle: TextStyle(color: Cores.azul),
-                              errorStyle: TextStyle(color: Cores.vermelho),
-                              errorBorder:
-                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                              focusedErrorBorder:
-                                  UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                            ),
-                            validators: [
-                              FormBuilderValidators.required(
-                                errorText: "Favor preencher o campo estado",
-                              ),
-                            ],
-                          ),
-                        ),
+                        FormBuilderValidators.minLength(3, errorText: 'No mínimo 3 letras')
                       ],
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(
-                            child: FormBuilderTextField(
-                          style: TextStyle(color: Cores.preto),
-                          attribute: "data",
-                          initialValue: widget.novo ? '' : widget.cadastro.dataNasc,
-                          showCursor: false,
-                          textCapitalization: TextCapitalization.characters,
-                          readOnly: false,
-                          keyboardType: TextInputType.text,
-                          decoration: InputDecoration(
-                            counterStyle: TextStyle(color: Cores.fundoTela),
-                            labelText: "Data de Nascimento",
-                            labelStyle: TextStyle(color: Cores.azul),
-                            errorStyle: TextStyle(color: Cores.vermelho),
-                            errorBorder:
-                                UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                            focusedErrorBorder:
-                                UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                          ),
-                        )),
-                        Expanded(
-                            child: FormBuilderTextField(
-                          style: TextStyle(color: Cores.preto),
-                          attribute: "telefone",
-                          initialValue: widget.novo ? '' : widget.cadastro.celular,
-                          showCursor: false,
-                          textCapitalization: TextCapitalization.characters,
-                          keyboardType: TextInputType.phone,
-                          readOnly: false,
-                          decoration: InputDecoration(
-                            counterStyle: TextStyle(color: Cores.fundoTela),
-                            labelText: "Telefone",
-                            labelStyle: TextStyle(color: Cores.azul),
-                            errorStyle: TextStyle(color: Cores.vermelho),
-                            errorBorder:
-                                UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                            focusedErrorBorder:
-                                UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
-                          ),
-                        )),
+                    child: FormBuilderTextField(
+                      style: TextStyle(color: Cores.preto),
+                      controller: _estadoController,
+                      attribute: "estados",
+                      initialValue: widget.novo ? '' : widget.cadastro.estado,
+                      keyboardType: TextInputType.text,
+                      readOnly: false,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        counterStyle: TextStyle(color: Cores.fundoTela),
+                        labelText: "Estado",
+                        labelStyle: TextStyle(color: Cores.azul),
+                        errorStyle: TextStyle(color: Cores.vermelho),
+                        errorBorder:
+                            UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                        focusedErrorBorder:
+                            UnderlineInputBorder(borderSide: const BorderSide(color: Cores.vermelho, width: 1.0)),
+                      ),
+                      validators: [
+                        FormBuilderValidators.required(
+                          errorText: "Favor preencher o campo Estado",
+                        ),
+                        FormBuilderValidators.minLength(2, errorText: 'No mínimo 2 letras'),
+                        FormBuilderValidators.maxLength(2, errorText: 'No máximo 2 letras')
                       ],
                     ),
                   ),
@@ -368,9 +467,11 @@ class _ManterCadastroState extends State<ManterCadastro> {
                         onPressed: () {
                           AlertLimparTela(
                               context: context,
-                              msg: "Deseja excluir o cadastro?",
+                              msg: "Confirma a exclusão?",
                               title: "JM Moura",
                               onPressed: () {
+                                CadastroService.delete(widget.cadastro.id.toString());
+                                Navigator.pop(context);
                                 Navigator.pop(context);
                               }).exibir();
                         }),
@@ -387,6 +488,26 @@ class _ManterCadastroState extends State<ManterCadastro> {
       context: context,
       titulo: 'Manutenção:',
       msg: 'Erro ao efetuar a operação.',
+      backgroundColor: Cores.erroScaffold,
+      icone: Icons.block,
+    ).exibir();
+  }
+
+  void erroCEP() {
+    AlertaRodape(
+      context: context,
+      titulo: 'CEP:',
+      msg: 'Erro ao pesquisar o cep.',
+      backgroundColor: Cores.erroScaffold,
+      icone: Icons.block,
+    ).exibir();
+  }
+
+  void cepNaoEncontrado() {
+    AlertaRodape(
+      context: context,
+      titulo: 'CEP:',
+      msg: 'CEP não encontrado.',
       backgroundColor: Cores.erroScaffold,
       icone: Icons.block,
     ).exibir();

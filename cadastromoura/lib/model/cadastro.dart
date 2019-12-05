@@ -9,10 +9,19 @@ class Cadastro {
   String celular;
   String dataNasc;
 
-  Cadastro(int id, String nome, String endereco, String bairro, String cidade, String estado, String cep,
-      String celular, String dataNasc) {
+  Cadastro(
+      {int id,
+      String nome,
+      String endereco,
+      String bairro,
+      String cidade,
+      String estado,
+      String cep,
+      String celular,
+      String dataNasc}) {
     this.id = id;
     this.nome = nome;
+    this.endereco = endereco;
     this.bairro = bairro;
     this.cidade = cidade;
     this.estado = estado;
@@ -23,16 +32,16 @@ class Cadastro {
 
   Cadastro.fromJson(Map json)
       : id = json['id'],
-        nome = json['Nome'],
-        endereco = json['Endereco'],
-        bairro = json['Bairro'],
-        cidade = json['Cidade'],
-        estado = json['Estado'],
-        cep = json['Cep'],
-        celular = json['Celular'],
-        dataNasc = json['DataNasc'];
+        nome = json['nome'],
+        endereco = json['endereco'],
+        bairro = json['bairro'],
+        cidade = json['cidade'],
+        estado = json['estado'],
+        cep = json['cep'],
+        celular = json['celular'],
+        dataNasc = json['datanasc'];
 
-  Map toJson() {
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
       'nome': nome,
@@ -42,7 +51,7 @@ class Cadastro {
       'estado': estado,
       'cep': cep,
       'celular': celular,
-      'dataNasc': dataNasc
+      'datanasc': dataNasc,
     };
   }
 }

@@ -29,6 +29,62 @@ class Alerta {
   }
 }
 
+class AlertExclusao {
+  final BuildContext context;
+  final Function onPressed;
+  final String title;
+  final String msg;
+
+  AlertExclusao({@required this.context, this.title = "JM Moura", @required this.msg, @required this.onPressed});
+
+  var alertStyle = AlertStyle(
+    animationType: AnimationType.fromTop,
+    isCloseButton: false,
+    isOverlayTapDismiss: false,
+    descStyle: TextStyle(fontSize: 15),
+    animationDuration: Duration(milliseconds: 300),
+    alertBorder: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(10.0),
+      side: BorderSide(
+        color: Cores.branco,
+      ),
+    ),
+    titleStyle: TextStyle(
+      fontSize: 18,
+    ),
+  );
+
+  void exibir() {
+    Alert(
+      context: context,
+      style: alertStyle,
+      type: AlertType.warning,
+      title: this.title,
+      desc: this.msg,
+      buttons: [
+        DialogButton(
+          child: Text(
+            "SIM",
+            style: TextStyle(color: Colors.white, fontSize: 15),
+          ),
+          onPressed: this.onPressed,
+          color: Cores.azul,
+          radius: BorderRadius.circular(10.0),
+        ),
+        DialogButton(
+          child: Text(
+            "NÃO",
+            style: TextStyle(color: Colors.white, fontSize: 15),
+          ),
+          onPressed: () => Navigator.pop(context),
+          color: Cores.vermelho,
+          radius: BorderRadius.circular(10.0),
+        )
+      ],
+    ).show();
+  }
+}
+
 class AlertLimparTela {
   final BuildContext context;
   final Function onPressed;
@@ -152,7 +208,7 @@ class AlertaRodape {
         color: Cores.branco,
       ),
       message: this.msg,
-      duration: Duration(seconds: 4),
+      duration: Duration(seconds: 2),
     )..show(context);
   }
 }
@@ -197,6 +253,28 @@ class AlertaSemConexao {
       ),
       message: 'No momento estamos sem conexão com internet.',
       duration: Duration(seconds: 4),
+    )..show(context);
+  }
+}
+
+class AlertaExclusao {
+  final BuildContext context;
+
+  AlertaExclusao({this.context});
+
+  void exibir() {
+    Flushbar(
+      title: 'Exclusão',
+      flushbarStyle: FlushbarStyle.GROUNDED,
+      backgroundColor: Cores.vermelho,
+      isDismissible: false,
+      icon: Icon(
+        Icons.delete,
+        size: 28.0,
+        color: Cores.branco,
+      ),
+      message: 'Cliente excluido com sucesso',
+      duration: Duration(seconds: 2),
     )..show(context);
   }
 }

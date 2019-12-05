@@ -98,7 +98,7 @@ class _MyAppState extends State<MyApp> {
         return Dashboard();
       }),
       title: new Text(
-        'Cadastro - JM Moura',
+        'Clientes - JM Moura',
         style: new TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0, color: Cores.branco),
       ),
       image: Image(

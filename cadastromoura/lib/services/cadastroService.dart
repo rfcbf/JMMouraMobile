@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:cadastromoura/model/cadastro.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-// const request = "https://todo-renato.herokuapp.com/api";
-const request = "https://jsonmock.com/api/get/tuGFQ4iBxrfAvlyZagm5N6IvteyNVX13";
+import 'package:http/http.dart' as http;
+
+const request = "https://renatocadastro.herokuapp.com/v1/cadastro";
 
 class CadastroService {
   static Future<List<Cadastro>> getCadsatro() async {
@@ -19,12 +19,20 @@ class CadastroService {
   }
 
   static Future post(Cadastro cadastro) async {
-    return await http.post(Uri.encodeFull(request),
-        body: cadastro.toJson(), headers: {"Accept": "application/json"}).then((http.Response response) {
-      final int statusCode = response.statusCode;
-      if (statusCode < 200 || statusCode > 400 || json == null) {
-        throw new Exception("Error while fetching data");
-      }
+    final headers = {'Content-Type': 'application/json'};
+    String jsonBody = json.encode(cadastro.toJson());
+    final encoding = Encoding.getByName('utf-8');
+
+    return await http
+        .post(
+          Uri.encodeFull(request),
+          headers: headers,
+          body: jsonBody,
+          encoding: encoding,
+        )
+        .then((response) {})
+        .catchError((onError) {
+      throw new Exception("Erro ao incluir");
     });
   }
 
@@ -32,22 +40,24 @@ class CadastroService {
     String url = request + "/$id";
 
     return await http
-        .delete(Uri.encodeFull(url), headers: {"Accept": "application/json"}).then((http.Response response) {
-      final int statusCode = response.statusCode;
-      if (statusCode < 200 || statusCode > 400 || json == null) {
-        throw new Exception("Error while fetching data");
-      }
-    });
+        .delete(Uri.encodeFull(url), headers: {"Accept": "application/json"}).then((http.Response response) {});
   }
 
-  static Future update(String id) async {
-    String url = request + "/$id";
+  static Future update(Cadastro cadastro) async {
+    final headers = {'Content-Type': 'application/json'};
+    String jsonBody = json.encode(cadastro.toJson());
+    final encoding = Encoding.getByName('utf-8');
 
-    return await http.put(Uri.encodeFull(url), headers: {"Accept": "application/json"}).then((http.Response response) {
-      final int statusCode = response.statusCode;
-      if (statusCode < 200 || statusCode > 400 || json == null) {
-        throw new Exception("Error while fetching data");
-      }
+    return await http
+        .put(
+          Uri.encodeFull(request),
+          headers: headers,
+          body: jsonBody,
+          encoding: encoding,
+        )
+        .then((response) {})
+        .catchError((onError) {
+      throw new Exception("Erro ao atualizar");
     });
   }
 }
